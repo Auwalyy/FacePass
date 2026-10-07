@@ -1,0 +1,18 @@
+/* Administrator portal specific styles */
+
+.filter-bar { background: #fff; border: 1px solid var(--evs-border); border-radius: .75rem; padding: .85rem 1rem; margin-bottom: 1rem; }
+.filter-bar .form-control, .filter-bar .form-select { font-size: .88rem; }
+
+.nav-tabs-status .nav-link { color: var(--evs-muted); font-weight: 500; }
+.nav-tabs-status .nav-link.active { color: var(--evs-primary); font-weight: 600; }
+
+.student-header-card .avatar-lg {
+    width: 72px; height: 72px; border-radius: 50%; background: var(--evs-primary); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 700;
+}
+.face-sample { width: 96px; height: 96px; object-fit: cover; border-radius: .5rem; border: 1px solid var(--evs-border); }
+
+.eligibility-switch .form-check-input { width: 2.4em; height: 1.25em; cursor: pointer; }
+.eligibility-switch .form-check-input:checked { background-color: var(--evs-success); border-color: var(--evs-success); }
+
+.audit-action { font-family: SFMono-Regular, Consolas, monospace; font-size: .78rem; }

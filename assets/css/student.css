@@ -1,0 +1,17 @@
+/* Student portal specific styles */
+
+.welcome-banner {
+    background: linear-gradient(120deg, var(--evs-primary) 0%, #1E3A8A 100%);
+    color: #fff; border-radius: .9rem; padding: 1.4rem 1.6rem; border: 0;
+}
+.welcome-banner .text-muted-light { color: #BFDBFE; }
+
+.exam-highlight { border-left: 4px solid var(--evs-primary); }
+.exam-highlight.today { border-left-color: var(--evs-warning); }
+.exam-highlight .course-code { font-weight: 700; font-size: 1.15rem; color: var(--evs-primary); }
+
+.summary-tile { text-align: center; padding: 1rem; }
+.summary-tile .value { font-size: 1.8rem; font-weight: 700; }
+.summary-tile .label { color: var(--evs-muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+
+.complaint-response { background: #F1F5F9; border-left: 3px solid var(--evs-primary); padding: .6rem .8rem; border-radius: .35rem; }
