@@ -4,7 +4,7 @@
 --
 -- Demo credentials (change them after the demo!):
 --   Admin    : admin@buk.edu.ng           / Admin@123
---   Students : SWE/2026/001 ... SWE/2026/005      / Student@123
+--   Students : SWE/2026/001 ... SWE/2026/006      / Student@123
 --              (students may also log in with their e-mail)
 --
 -- Examination dates are relative to the day you import this file, so the
@@ -37,7 +37,8 @@ INSERT INTO users (id, student_id, first_name, last_name, email, phone, password
 (3, 'SWE/2026/002', 'Aisha',   'Bello',         'aisha.bello@student.buk.edu.ng',      '08032222222', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active'),
 (4, 'SWE/2026/003', 'Ibrahim', 'Musa',          'ibrahim.musa@student.buk.edu.ng',     '08033333333', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active'),
 (5, 'SWE/2026/004', 'Fatima',  'Abdullahi',     'fatima.abdullahi@student.buk.edu.ng', '08034444444', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active'),
-(6, 'SWE/2026/005', 'Chinedu', 'Okafor',        'chinedu.okafor@student.buk.edu.ng',   '08035555555', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active');
+(6, 'SWE/2026/005', 'Chinedu', 'Okafor',        'chinedu.okafor@student.buk.edu.ng',   '08035555555', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active'),
+(7, 'SWE/2026/006', 'Musa',    'Uba',           'musa.uba@student.buk.edu.ng',         '08030000006', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active');
 
 -- ---------------------------------------------------------------------
 -- Examinations
@@ -65,6 +66,8 @@ INSERT INTO exam_eligibility (student_id, exam_id, school_fees_paid, eligible, r
 (4, 2, 0, 0, 'School fees/payment requirement has not been satisfied.', NULL),
 (5, 2, 1, 1, NULL, NULL),
 (6, 2, 1, 1, NULL, NULL),
+(7, 1, 1, 1, NULL, NULL),
+(7, 2, 0, 0, 'Awaiting payment confirmation.', NULL),
 (2, 3, 1, 1, NULL, DATE_SUB(CURDATE(), INTERVAL 5 DAY)),
 (3, 3, 1, 1, NULL, DATE_SUB(CURDATE(), INTERVAL 5 DAY)),
 (4, 3, 1, 1, NULL, DATE_SUB(CURDATE(), INTERVAL 5 DAY)),

@@ -137,7 +137,15 @@ function valid_time(string $value): bool
 
 function client_ip(): string
 {
-    // REMOTE_ADDR only - forwarded headers are trivially spoofable.
+    // Behind a Cloudflare Tunnel every request arrives from 127.0.0.1, so use the
+    // visitor IP Cloudflare supplies. It is trusted ONLY via the local tunnel
+    // (see via_local_tunnel()); otherwise forwarded headers are trivially spoofable.
+    if (via_local_tunnel()) {
+        $ip = filter_var($_SERVER['HTTP_CF_CONNECTING_IP'], FILTER_VALIDATE_IP);
+        if ($ip !== false) {
+            return $ip;
+        }
+    }
     return substr($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0', 0, 45);
 }
 

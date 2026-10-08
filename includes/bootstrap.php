@@ -72,6 +72,29 @@ if (!headers_sent()) {
 }
 
 // ---------------------------------------------------------------------
+// Online access through a Cloudflare Tunnel (cloudflared on this machine)
+// ---------------------------------------------------------------------
+
+/**
+ * True when the request was forwarded by a tunnel running on this computer:
+ * it comes from the loopback address AND carries Cloudflare's visitor header.
+ */
+function via_local_tunnel(): bool
+{
+    return in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true)
+        && !empty($_SERVER['HTTP_CF_CONNECTING_IP']);
+}
+
+/** HTTPS directly, or HTTPS terminated by the tunnel. */
+function is_https(): bool
+{
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        return true;
+    }
+    return via_local_tunnel() && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+}
+
+// ---------------------------------------------------------------------
 // Session (hardened cookie settings)
 // ---------------------------------------------------------------------
 if (session_status() === PHP_SESSION_NONE) {
@@ -81,7 +104,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
         'lifetime' => 0,
         'path'     => '/',
-        'secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        'secure'   => is_https(),
         'httponly' => true,
         'samesite' => 'Lax',
     ]);

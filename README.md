@@ -32,6 +32,7 @@ An academic MVP that replaces manual identity checks at university examination h
 21. [Known MVP limitations](#21-known-mvp-limitations)
 22. [Project structure](#22-project-structure)
 23. [Acceptance test checklist](#23-acceptance-test-checklist)
+24. [Online deployment (Cloudflare Tunnel)](#24-online-deployment-cloudflare-tunnel)
 
 ---
 
@@ -400,6 +401,7 @@ Students log in with their **student ID** *or* e-mail. All demo students use the
 | `SWE/2026/003` | Ibrahim Musa | **School fees NOT paid** → use for the *not eligible* test |
 | `SWE/2026/004` | Fatima Abdullahi | **Already verified** today → use for the *already verified* test |
 | `SWE/2026/005` | Chinedu Okafor | Eligible; has a **pending complaint** (marked absent for SWE405) |
+| `SWE/2026/006` | Musa Uba | Paid & eligible for SWE401; SWE403 awaiting payment |
 
 Demo exams: **SWE401** Software Architecture and Design (today, ongoing, kiosk exam), **SWE403** Software Testing and Quality Assurance (in 3 days, scheduled), **SWE405** Software Project Management (5 days ago, completed).
 
@@ -546,3 +548,47 @@ exam-verification-system/
 ---
 
 *Academic MVP. Built with PHP, MySQL, Bootstrap, Python and OpenCV for XAMPP.*
+
+---
+
+## 24. Online deployment (Cloudflare Tunnel)
+
+The simplest way to put FacePass online (for a supervisor demo or project defence) is to keep it on the XAMPP laptop and publish it with a free **Cloudflare quick tunnel**. You get a public `https://<random>.trycloudflare.com` link. Because it is HTTPS, the **camera works on any phone or PC**. No account, domain or router setup is needed. The laptop must stay on, with Apache, MySQL and the tunnel window running.
+
+### One-time setup
+
+1. Download `cloudflared` for Windows and save it as `%USERPROFILE%\cloudflared\cloudflared.exe`:
+   <https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe>
+2. **Protect XAMPP's admin tools.** Tunnel traffic reaches Apache from `127.0.0.1`, so XAMPP's `Require local` would expose **phpMyAdmin (MySQL root, no password)** to the internet. Copy `deploy\apache-tunnel.conf` to `C:\xampp\apache\conf\extra\httpd-facepass-tunnel.conf`, add this line at the end of `C:\xampp\apache\conf\httpd.conf`, then restart Apache:
+
+   ```apache
+   IncludeOptional "conf/extra/httpd-facepass-tunnel.conf"
+   ```
+
+   Tunnel visitors then get **403 Forbidden** on `/phpmyadmin`, `/webalizer`, `/licenses`, `/php-cgi/` and the server-status pages. Local `http://localhost/phpmyadmin` keeps working.
+3. **Change the demo passwords**, because they are published in this README:
+   * Admin: *Administrators → Change my password*.
+   * Students: *Students → (student) → Edit Details → Password*.
+   * Optionally turn off *student self-enrollment* in *Settings*.
+
+### Every time you want to go online
+
+1. Start **Apache** and **MySQL** in the XAMPP Control Panel.
+2. Double-click **`deploy\start-online.bat`**.
+3. Copy the `https://….trycloudflare.com` link it prints and open it on any device.
+
+Closing the window takes the site offline. The link changes on every start. For a permanent address, create a free Cloudflare account and a *named tunnel* with your own domain.
+
+### What the app does when accessed through the tunnel
+
+* It trusts the `CF-Connecting-IP` header **only** for requests that come from the local tunnel. Login rate limiting and audit logs therefore record the real visitor IP, not `127.0.0.1`.
+* It detects HTTPS from `X-Forwarded-Proto`, so session cookies are marked `Secure`.
+* Everything the `.htaccess` files block locally (`config/`, `includes/`, `uploads/`, `logs/`, `database/`, `deploy/`, `venv/`, `.sql`, `.md`, `.py`) stays blocked.
+
+### Other deployment options
+
+| Option | Notes |
+|---|---|
+| **Exam-hall LAN** | One PC runs XAMPP, and kiosk PCs connect over the network. Enable HTTPS in XAMPP (`httpd-ssl.conf`, self-signed certificate) so other PCs may use the camera. |
+| **Cloud VPS** (Ubuntu + Apache + PHP + MySQL + Python) | Always online with a real domain and Let's Encrypt HTTPS. Create the venv with `python3 -m venv venv` (PHP finds `venv/bin/python` automatically) and install the requirements. Make sure `uploads/`, `logs/` and `facial_recognition/models/` are writable by the web server user. |
+| **Shared/free PHP hosting** | Not suitable. These hosts usually forbid Python and `proc_open`, so facial recognition would not work. |
