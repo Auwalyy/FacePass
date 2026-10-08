@@ -1,0 +1,26 @@
+# ---------------------------------------------------------------------
+# FacePass - Apache hardening (XAMPP has AllowOverride All by default)
+# ---------------------------------------------------------------------
+
+# No directory listings.
+Options -Indexes
+
+DirectoryIndex index.php
+
+# Block hidden files (.git, .env, .htaccess) and non-web file types anywhere.
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+<FilesMatch "\.(sql|md|py|pyc|log|yml|yaml|ini|txt|json|lock|bak|sh)$">
+    Require all denied
+</FilesMatch>
+
+# The Python virtual environment must never be served.
+RedirectMatch 404 ^/[^/]*/?venv/
+
+# Friendly upload limits for webcam frames (only applies with mod_php).
+<IfModule mod_php.c>
+    php_value upload_max_filesize 4M
+    php_value post_max_size 40M
+    php_value max_file_uploads 20
+</IfModule>

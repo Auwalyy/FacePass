@@ -1,0 +1,22 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Biometric data, temp uploads, trained models and logs - never commit
+uploads/faces/*
+!uploads/faces/.gitkeep
+uploads/tmp/*
+!uploads/tmp/.gitkeep
+facial_recognition/models/*
+!facial_recognition/models/.gitkeep
+facial_recognition/captures/
+logs/*
+!logs/.gitkeep
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

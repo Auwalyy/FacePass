@@ -28,16 +28,16 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- ---------------------------------------------------------------------
 -- Users  (password hashes generated with bcrypt, cost 10 - PHP password_hash compatible)
---   Admin@123   -> __ADMIN_HASH__
---   Student@123 -> __STUDENT_HASH__
+--   Admin@123   -> $2y$10$UunHNpbUlZ3/sVTeVtoK9.tOogAnpjrSa6DRLIV/FLxmy/GXHmOIa
+--   Student@123 -> $2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du
 -- ---------------------------------------------------------------------
 INSERT INTO users (id, student_id, first_name, last_name, email, phone, password, role, department, level, faculty, face_registered, account_status) VALUES
-(1, NULL,           'System',  'Administrator', 'admin@university.edu.ng',                    '08030000000', '__ADMIN_HASH__',   'admin',   'Examinations Office', NULL,  NULL,                      0, 'active'),
-(2, 'CSC/2021/001', 'Auwal',   'Muhammad',      'auwal.muhammad@student.university.edu.ng',   '08031111111', '__STUDENT_HASH__', 'student', 'Computer Science',    '400', 'Physical Sciences', 0, 'active'),
-(3, 'CSC/2021/002', 'Aisha',   'Bello',         'aisha.bello@student.university.edu.ng',      '08032222222', '__STUDENT_HASH__', 'student', 'Computer Science',    '400', 'Physical Sciences', 0, 'active'),
-(4, 'CSC/2021/003', 'Ibrahim', 'Musa',          'ibrahim.musa@student.university.edu.ng',     '08033333333', '__STUDENT_HASH__', 'student', 'Computer Science',    '400', 'Physical Sciences', 0, 'active'),
-(5, 'CSC/2021/004', 'Fatima',  'Abdullahi',     'fatima.abdullahi@student.university.edu.ng', '08034444444', '__STUDENT_HASH__', 'student', 'Computer Science',    '400', 'Physical Sciences', 0, 'active'),
-(6, 'CSC/2021/005', 'Chinedu', 'Okafor',        'chinedu.okafor@student.university.edu.ng',   '08035555555', '__STUDENT_HASH__', 'student', 'Computer Science',    '400', 'Physical Sciences', 0, 'active');
+(1, NULL,           'System',  'Administrator', 'admin@university.edu.ng',                    '08030000000', '$2y$10$UunHNpbUlZ3/sVTeVtoK9.tOogAnpjrSa6DRLIV/FLxmy/GXHmOIa',   'admin',   'Examinations Office', NULL,  NULL,                      0, 'active'),
+(2, 'CSC/2021/001', 'Auwal',   'Muhammad',      'auwal.muhammad@student.university.edu.ng',   '08031111111', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Computer Science',    '400', 'Physical Sciences', 0, 'active'),
+(3, 'CSC/2021/002', 'Aisha',   'Bello',         'aisha.bello@student.university.edu.ng',      '08032222222', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Computer Science',    '400', 'Physical Sciences', 0, 'active'),
+(4, 'CSC/2021/003', 'Ibrahim', 'Musa',          'ibrahim.musa@student.university.edu.ng',     '08033333333', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Computer Science',    '400', 'Physical Sciences', 0, 'active'),
+(5, 'CSC/2021/004', 'Fatima',  'Abdullahi',     'fatima.abdullahi@student.university.edu.ng', '08034444444', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Computer Science',    '400', 'Physical Sciences', 0, 'active'),
+(6, 'CSC/2021/005', 'Chinedu', 'Okafor',        'chinedu.okafor@student.university.edu.ng',   '08035555555', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Computer Science',    '400', 'Physical Sciences', 0, 'active');
 
 -- ---------------------------------------------------------------------
 -- Examinations

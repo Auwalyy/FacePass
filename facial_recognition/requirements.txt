@@ -1,0 +1,7 @@
+# Facial recognition engine requirements (Python 3.8+)
+#
+# IMPORTANT: use opencv-contrib-python, NOT opencv-python.
+# The LBPH face recognizer (cv2.face.LBPHFaceRecognizer_create) is only in the
+# contrib build. If both are installed they conflict - uninstall opencv-python.
+opencv-contrib-python>=4.8,<5
+numpy>=1.24

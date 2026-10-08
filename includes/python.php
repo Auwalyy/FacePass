@@ -117,6 +117,9 @@ function retrain_face_model(): array
         }
     }
 
+    if (!is_dir(TMP_UPLOAD_PATH)) {
+        mkdir(TMP_UPLOAD_PATH, 0750, true);
+    }
     $manifest = tempnam(TMP_UPLOAD_PATH, 'manifest_');
     file_put_contents($manifest, json_encode(['samples' => $samples]));
 
