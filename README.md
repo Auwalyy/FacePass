@@ -362,7 +362,7 @@ When recognition fails (poor light, no enrolled face, camera fault), click **Man
 
 ```json
 {"success": true, "verified": true, "reason": "VERIFIED",
- "student": {"id": "SWE/2021/001", "name": "Auwal Muhammad", ...},
+ "student": {"id": "SWE/2026/001", "name": "Auwal Muhammad", ...},
  "exam": {"course_code": "SWE401", "course_title": "Software Architecture and Design", ...},
  "attendance": {"status": "present", "recorded": true, "time": "07 Oct 2026, 9:02 AM"},
  "confidence": 0.7314, "distance": 37.6}
@@ -375,7 +375,7 @@ When recognition fails (poor light, no enrolled face, camera fault), click **Man
 `recognize.py` output (what PHP receives):
 
 ```json
-{"success": true, "matched": true, "student_id": "SWE/2021/001", "user_id": 2, "distance": 37.6, "confidence": 0.7314, "threshold": 70.0}
+{"success": true, "matched": true, "student_id": "SWE/2026/001", "user_id": 2, "distance": 37.6, "confidence": 0.7314, "threshold": 70.0}
 {"success": false, "matched": false, "reason": "NO_MATCH", "message": "No matching face found", "distance": 96.2, "confidence": 0.3129, "threshold": 70.0}
 ```
 
@@ -395,11 +395,11 @@ Students log in with their **student ID** *or* e-mail. All demo students use the
 
 | Student ID | Name | Demo situation for SWE401 (today) |
 |---|---|---|
-| `SWE/2021/001` | Auwal Muhammad | Paid & eligible, not verified yet → **use for the success test** |
-| `SWE/2021/002` | Aisha Bello | Paid & eligible, not verified yet |
-| `SWE/2021/003` | Ibrahim Musa | **School fees NOT paid** → use for the *not eligible* test |
-| `SWE/2021/004` | Fatima Abdullahi | **Already verified** today → use for the *already verified* test |
-| `SWE/2021/005` | Chinedu Okafor | Eligible; has a **pending complaint** (marked absent for SWE405) |
+| `SWE/2026/001` | Auwal Muhammad | Paid & eligible, not verified yet → **use for the success test** |
+| `SWE/2026/002` | Aisha Bello | Paid & eligible, not verified yet |
+| `SWE/2026/003` | Ibrahim Musa | **School fees NOT paid** → use for the *not eligible* test |
+| `SWE/2026/004` | Fatima Abdullahi | **Already verified** today → use for the *already verified* test |
+| `SWE/2026/005` | Chinedu Okafor | Eligible; has a **pending complaint** (marked absent for SWE405) |
 
 Demo exams: **SWE401** Software Architecture and Design (today, ongoing, kiosk exam), **SWE403** Software Testing and Quality Assurance (in 3 days, scheduled), **SWE405** Software Project Management (5 days ago, completed).
 
@@ -414,15 +414,15 @@ A 10-minute walkthrough covering the whole system:
 
 1. **Import** `schema.sql` and `seed.sql`; start Apache and MySQL.
 2. **Admin login** → the dashboard shows live counts and "Kiosk examination: SWE401".
-3. **Enroll a face:** *Students* → `SWE/2021/001` → **Enroll face** → Start camera → **Capture & Enroll**. Expect "Face enrolled with N sample(s). Recognition model updated."
-4. **(Optional) enroll a second person** as `SWE/2021/003` (unpaid) to test the *not eligible* path, and someone as `SWE/2021/004` to test *already verified*.
+3. **Enroll a face:** *Students* → `SWE/2026/001` → **Enroll face** → Start camera → **Capture & Enroll**. Expect "Face enrolled with N sample(s). Recognition model updated."
+4. **(Optional) enroll a second person** as `SWE/2026/003` (unpaid) to test the *not eligible* path, and someone as `SWE/2026/004` to test *already verified*.
 5. **Verification Kiosk** → stand in front of the camera → **VERIFY STUDENT**. Expect ✓ *VERIFICATION SUCCESSFUL*.
 6. Click **VERIFY STUDENT** again. Expect ⚠ *ALREADY VERIFIED* (no duplicate record).
 7. Point the camera at someone who is not enrolled. Expect ✗ *STUDENT NOT RECOGNIZED*.
-8. Verify the person enrolled as `SWE/2021/003`. Expect ✗ *NOT ELIGIBLE: School fees/payment requirement has not been satisfied.*
-9. **Payments & Eligibility** → SWE401 → switch **School fees** on for `SWE/2021/003` → verify again. Expect ✓.
+8. Verify the person enrolled as `SWE/2026/003`. Expect ✗ *NOT ELIGIBLE: School fees/payment requirement has not been satisfied.*
+9. **Payments & Eligibility** → SWE401 → switch **School fees** on for `SWE/2026/003` → verify again. Expect ✓.
 10. **Manual verification** on the kiosk → search "Aisha" → *Verify manually*. Expect ✓ with method *Manual*.
-11. Log out, then log in as **`SWE/2021/001` / `Student@123`** → *My Attendance* shows SWE401 **Present**. *Timetable* shows SWE401/SWE403. Submit a **complaint**.
+11. Log out, then log in as **`SWE/2026/001` / `Student@123`** → *My Attendance* shows SWE401 **Present**. *Timetable* shows SWE401/SWE403. Submit a **complaint**.
 12. Log in as admin → **Complaints** → *Review* → respond and **Resolve**. The student sees the new status and response.
 13. **Attendance** → filter by SWE401 → **Correct** a record (a reason is required) → check **Audit Logs**.
 
@@ -528,7 +528,7 @@ exam-verification-system/
 | # | Scenario | How to test | Expected |
 |---|---|---|---|
 | 1 | Admin logs in | `admin@buk.edu.ng` / `Admin@123` | Admin dashboard |
-| 2 | Student logs in | `SWE/2021/001` / `Student@123` | Student dashboard |
+| 2 | Student logs in | `SWE/2026/001` / `Student@123` | Student dashboard |
 | 3 | Admin creates student | Students → Add Student | Appears in student list |
 | 4 | Admin creates examination | Examinations → Create (dept *Software Engineering*, level *400*) | Appears in the students' timetable |
 | 5 | Admin marks student eligible | Payments & Eligibility → toggle *School fees* | Result shows ELIGIBLE; kiosk accepts the student |
@@ -536,7 +536,7 @@ exam-verification-system/
 | 7 | Correct student verifies | Kiosk → VERIFY | Recognised, eligibility checked, attendance recorded |
 | 8 | Verify twice | Kiosk → VERIFY again | ⚠ ALREADY VERIFIED; still one attendance row |
 | 9 | Unrecognised face | Non-enrolled person at kiosk | ✗ STUDENT NOT RECOGNIZED |
-| 10 | Not eligible | Enrolled `SWE/2021/003` (unpaid) at kiosk | ✗ NOT ELIGIBLE + reason |
+| 10 | Not eligible | Enrolled `SWE/2026/003` (unpaid) at kiosk | ✗ NOT ELIGIBLE + reason |
 | 11 | Student timetable | Student → Exam Timetable | Correct exams listed |
 | 12 | Student attendance | Student → My Attendance | Verified exam shows *Present* |
 | 13 | Student complaint | Student → Complaints → Submit | Visible in Admin → Complaints / dashboard |

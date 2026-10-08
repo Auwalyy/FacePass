@@ -84,7 +84,7 @@ require __DIR__ . '/../includes/header.php';
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-person"></i></span>
                         <input type="text" class="form-control" id="identifier" name="identifier"
-                               value="<?= e($identifier) ?>" placeholder="e.g. SWE/2021/001 or admin@buk.edu.ng"
+                               value="<?= e($identifier) ?>" placeholder="e.g. SWE/2026/001 or admin@buk.edu.ng"
                                required maxlength="120" autofocus>
                         <div class="invalid-feedback">Enter your student ID or e-mail.</div>
                     </div>

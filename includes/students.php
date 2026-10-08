@@ -35,7 +35,7 @@ function validate_student(array $data, ?int $excludeId, bool $passwordRequired):
     $errors = [];
 
     if (!preg_match(STUDENT_ID_PATTERN, $data['student_id'])) {
-        $errors['student_id'] = 'Student ID must be 3-30 characters: letters, numbers, "/" or "-" (e.g. SWE/2021/001).';
+        $errors['student_id'] = 'Student ID must be 3-30 characters: letters, numbers, "/" or "-" (e.g. SWE/2026/001).';
     }
     foreach (['first_name' => 'First name', 'last_name' => 'Last name'] as $field => $label) {
         if (!preg_match("/^[\p{L}][\p{L}' .\-]{0,59}$/u", $data[$field])) {
@@ -116,7 +116,7 @@ function render_student_fields(array $data, array $errors, bool $isEdit): void
         <div class="col-md-4">
             <label class="form-label required" for="student_id">Student ID (Matric No.)</label>
             <input type="text" class="form-control text-uppercase<?= invalid_class($errors, 'student_id') ?>" id="student_id" name="student_id"
-                   value="<?= e($data['student_id'] ?? '') ?>" required maxlength="30" pattern="[A-Za-z0-9][A-Za-z0-9\/\-]{2,29}" placeholder="SWE/2021/001">
+                   value="<?= e($data['student_id'] ?? '') ?>" required maxlength="30" pattern="[A-Za-z0-9][A-Za-z0-9\/\-]{2,29}" placeholder="SWE/2026/001">
             <?= field_error($errors, 'student_id') ?>
         </div>
         <div class="col-md-4">

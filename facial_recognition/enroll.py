@@ -16,7 +16,7 @@ Sub-commands
 
     python enroll.py train --manifest manifest.json --model-dir models
 
-   manifest.json = {"samples": [{"label": 12, "student_id": "SWE/2021/001", "path": "..."}]}
+   manifest.json = {"samples": [{"label": 12, "student_id": "SWE/2026/001", "path": "..."}]}
    Each sample is also added horizontally flipped to make the model a little
    more tolerant of pose.
 

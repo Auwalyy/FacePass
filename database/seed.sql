@@ -4,7 +4,7 @@
 --
 -- Demo credentials (change them after the demo!):
 --   Admin    : admin@buk.edu.ng           / Admin@123
---   Students : SWE/2021/001 ... SWE/2021/005      / Student@123
+--   Students : SWE/2026/001 ... SWE/2026/005      / Student@123
 --              (students may also log in with their e-mail)
 --
 -- Examination dates are relative to the day you import this file, so the
@@ -33,11 +33,11 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- ---------------------------------------------------------------------
 INSERT INTO users (id, student_id, first_name, last_name, email, phone, password, role, department, level, faculty, face_registered, account_status) VALUES
 (1, NULL,           'System',  'Administrator', 'admin@buk.edu.ng',                    '08030000000', '$2y$10$UunHNpbUlZ3/sVTeVtoK9.tOogAnpjrSa6DRLIV/FLxmy/GXHmOIa',   'admin',   'Examinations Office', NULL,  NULL,                      0, 'active'),
-(2, 'SWE/2021/001', 'Auwal',   'Muhammad',      'auwal.muhammad@student.buk.edu.ng',   '08031111111', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active'),
-(3, 'SWE/2021/002', 'Aisha',   'Bello',         'aisha.bello@student.buk.edu.ng',      '08032222222', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active'),
-(4, 'SWE/2021/003', 'Ibrahim', 'Musa',          'ibrahim.musa@student.buk.edu.ng',     '08033333333', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active'),
-(5, 'SWE/2021/004', 'Fatima',  'Abdullahi',     'fatima.abdullahi@student.buk.edu.ng', '08034444444', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active'),
-(6, 'SWE/2021/005', 'Chinedu', 'Okafor',        'chinedu.okafor@student.buk.edu.ng',   '08035555555', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active');
+(2, 'SWE/2026/001', 'Auwal',   'Muhammad',      'auwal.muhammad@student.buk.edu.ng',   '08031111111', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active'),
+(3, 'SWE/2026/002', 'Aisha',   'Bello',         'aisha.bello@student.buk.edu.ng',      '08032222222', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active'),
+(4, 'SWE/2026/003', 'Ibrahim', 'Musa',          'ibrahim.musa@student.buk.edu.ng',     '08033333333', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active'),
+(5, 'SWE/2026/004', 'Fatima',  'Abdullahi',     'fatima.abdullahi@student.buk.edu.ng', '08034444444', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active'),
+(6, 'SWE/2026/005', 'Chinedu', 'Okafor',        'chinedu.okafor@student.buk.edu.ng',   '08035555555', '$2y$10$fNQFuYchgCtl061/v03gmOAUpbGBKY.5Ms1aMLQTosf3Jr4qYj2du', 'student', 'Software Engineering',    '400', 'Computer Science and Information Technology', 0, 'active');
 
 -- ---------------------------------------------------------------------
 -- Examinations
@@ -105,5 +105,5 @@ UPDATE settings SET setting_value = '1' WHERE setting_key = 'active_exam_id';
 -- ---------------------------------------------------------------------
 INSERT INTO audit_logs (user_id, action, description, ip_address, created_at) VALUES
 (1, 'EXAM_CREATE',         'Created examination SWE401 - Software Architecture and Design', '127.0.0.1', DATE_SUB(NOW(), INTERVAL 2 DAY)),
-(1, 'MANUAL_VERIFICATION', 'Manually verified SWE/2021/003 for SWE405 (camera unavailable)', '127.0.0.1', DATE_SUB(NOW(), INTERVAL 5 DAY)),
-(1, 'FACE_VERIFY_SUCCESS', 'SWE/2021/004 verified for SWE401 (confidence 0.8025)', '127.0.0.1', CONCAT(CURDATE(), ' 08:47:19'));
+(1, 'MANUAL_VERIFICATION', 'Manually verified SWE/2026/003 for SWE405 (camera unavailable)', '127.0.0.1', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(1, 'FACE_VERIFY_SUCCESS', 'SWE/2026/004 verified for SWE401 (confidence 0.8025)', '127.0.0.1', CONCAT(CURDATE(), ' 08:47:19'));

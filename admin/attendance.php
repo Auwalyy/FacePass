@@ -268,7 +268,7 @@ require __DIR__ . '/../includes/header.php';
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="add"><input type="hidden" name="return" value="<?= e($returnQuery) ?>">
             <div class="mb-3"><label class="form-label required" for="addMatric">Student ID</label>
-                <input class="form-control text-uppercase" name="matric" id="addMatric" required maxlength="30" placeholder="SWE/2021/001"></div>
+                <input class="form-control text-uppercase" name="matric" id="addMatric" required maxlength="30" placeholder="SWE/2026/001"></div>
             <div class="mb-3"><label class="form-label required" for="addExam">Examination</label>
                 <select class="form-select" name="exam_id" id="addExam" required><option value="">Select…</option>
                     <?php foreach ($exams as $ex): ?><option value="<?= (int) $ex['id'] ?>"><?= e($ex['course_code'] . ' · ' . date('d M Y', strtotime($ex['exam_date'])) . ' (' . $ex['status'] . ')') ?></option><?php endforeach; ?></select></div>
