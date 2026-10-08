@@ -20,7 +20,7 @@ function env_or(string $key, $default)
 // General
 // ---------------------------------------------------------------------
 define('APP_NAME', 'FacePass Exam Verification');
-define('INSTITUTION_NAME', env_or('INSTITUTION_NAME', 'Federal University'));
+define('INSTITUTION_NAME', env_or('INSTITUTION_NAME', 'Bayero University, Kano'));
 define('APP_TIMEZONE', env_or('APP_TIMEZONE', 'Africa/Lagos'));
 
 // Set to true ONLY while developing. Shows raw errors in the browser.
@@ -98,6 +98,13 @@ define('DEFAULT_RECOGNITION_THRESHOLD', 70);
 define('ENROLL_FRAMES', 8);
 // Minimum number of frames in which a face must be detected.
 define('ENROLL_MIN_FACES', 5);
+/*
+ * Minimum face sharpness (variance of Laplacian on the 200x200 face).
+ * Soft laptop webcams measure roughly 6-60; motion-smeared faces about 2-4.
+ * If enrollment keeps saying "too blurry", the error shows the measured
+ * values - set this a little below them (never below ~3).
+ */
+define('ENROLL_MIN_SHARPNESS', (float) env_or('ENROLL_MIN_SHARPNESS', 5));
 
 // ---------------------------------------------------------------------
 // Uploads

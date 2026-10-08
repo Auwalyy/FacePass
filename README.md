@@ -236,7 +236,7 @@ C:\xampp\mysql\bin\mysql.exe -u root < database\seed.sql
 
 (Add `-p` if your root user has a password.)
 
-> ⚠ `schema.sql` **drops and recreates** the database. Re-importing `seed.sql` resets all demo data. Seed dates are relative to the import day, so the demo exam **CSC401 is always "today" and ongoing**. Re-import the seed on another day to refresh it.
+> ⚠ `schema.sql` **drops and recreates** the database. Re-importing `seed.sql` resets all demo data. Seed dates are relative to the import day, so the demo exam **SWE401 is always "today" and ongoing**. Re-import the seed on another day to refresh it.
 
 Tables: `users`, `student_faces`, `examinations`, `exam_eligibility`, `attendance` (unique `(student_id, exam_id)`), `complaints`, `audit_logs`, `settings`.
 
@@ -252,11 +252,12 @@ All settings live in **`config/config.php`**. Each value can also be overridden 
 | `DB_NAME` | `exam_verification_system` | Database name |
 | `DB_USER`, `DB_PASS` | `root`, *(empty)* | MySQL credentials |
 | `APP_TIMEZONE` | `Africa/Lagos` | Used for exam dates/times. Change it to your timezone |
-| `INSTITUTION_NAME` | `Federal University` | Shown in the header |
+| `INSTITUTION_NAME` | `Bayero University, Kano` | Shown in the header |
 | `PYTHON_PATH` | auto | Python interpreter used by PHP (see below) |
 | `PYTHON_TIMEOUT` | `60` | Seconds before a Python call is aborted |
 | `DEFAULT_RECOGNITION_THRESHOLD` | `70` | LBPH distance threshold (overridden in Admin → Settings) |
 | `ENROLL_FRAMES` / `ENROLL_MIN_FACES` | `8` / `5` | Frames captured per enrollment / minimum frames that must pass |
+| `ENROLL_MIN_SHARPNESS` | `5` | Minimum face sharpness during enrollment. Soft laptop webcams measure about 6–60, motion-smeared faces 2–4. If enrollment reports *too blurry*, the error shows the measured values; set this slightly below them (not below ~3) |
 | `MAX_IMAGE_BYTES` | 2 MB | Maximum size of one uploaded frame |
 | `APP_DEBUG` | `false` | Show raw PHP errors (development only) |
 
@@ -306,10 +307,10 @@ Enrollment is supervised by an administrator: the officer checks the student's I
 1. **Admin → Students →** click the 📷 icon next to a student (or open the student and click **Enroll face**).
 2. Click **Start camera** and allow camera access in the browser.
 3. Seat the student alone in front of the camera, in good even light, with the face inside the oval.
-4. Click **Capture & Enroll**. The browser takes **8 frames** while the student turns their head slightly.
+4. Click **Capture & Enroll** and have the student **hold still** while the browser takes **8 frames** (about 3 seconds). Movement causes blurry frames.
 5. PHP validates each frame (size, real MIME type, dimensions) and runs `facial_recognition/enroll.py detect`, which for **each frame**:
    * detects faces with the Haar cascade and **rejects frames with no face or more than one face**;
-   * rejects **blurry** frames (variance of Laplacian < 35) and **too dark/bright** frames;
+   * rejects **blurry** frames (variance of the Laplacian of the face resized to 200×200 below `ENROLL_MIN_SHARPNESS`, default 5) and **too dark/bright** frames;
    * crops the face, converts it to 200×200 grayscale with histogram equalisation, and saves it to `uploads/faces/` with a **random 32-hex-character file name**.
 6. If **fewer than 5 frames** pass, nothing is saved and the screen explains why (e.g. "no face ×4, too blurry ×1").
 7. If enrollment succeeds, `student_faces` rows are written, `users.face_registered = 1`, and the **LBPH model is retrained automatically** (`enroll.py train`) from all active students' faces. The student can be recognised immediately.
@@ -361,8 +362,8 @@ When recognition fails (poor light, no enrolled face, camera fault), click **Man
 
 ```json
 {"success": true, "verified": true, "reason": "VERIFIED",
- "student": {"id": "CSC/2021/001", "name": "Auwal Muhammad", ...},
- "exam": {"course_code": "CSC401", "course_title": "Software Engineering", ...},
+ "student": {"id": "SWE/2021/001", "name": "Auwal Muhammad", ...},
+ "exam": {"course_code": "SWE401", "course_title": "Software Architecture and Design", ...},
  "attendance": {"status": "present", "recorded": true, "time": "07 Oct 2026, 9:02 AM"},
  "confidence": 0.7314, "distance": 37.6}
 
@@ -374,7 +375,7 @@ When recognition fails (poor light, no enrolled face, camera fault), click **Man
 `recognize.py` output (what PHP receives):
 
 ```json
-{"success": true, "matched": true, "student_id": "CSC/2021/001", "user_id": 2, "distance": 37.6, "confidence": 0.7314, "threshold": 70.0}
+{"success": true, "matched": true, "student_id": "SWE/2021/001", "user_id": 2, "distance": 37.6, "confidence": 0.7314, "threshold": 70.0}
 {"success": false, "matched": false, "reason": "NO_MATCH", "message": "No matching face found", "distance": 96.2, "confidence": 0.3129, "threshold": 70.0}
 ```
 
@@ -385,22 +386,22 @@ When recognition fails (poor light, no enrolled face, camera fault), click **Man
 | Field | Value |
 |---|---|
 | URL | <http://localhost/exam-verification-system/> |
-| E-mail | `admin@university.edu.ng` |
+| E-mail | `admin@buk.edu.ng` |
 | Password | `Admin@123` |
 
 ## 17. Student login
 
 Students log in with their **student ID** *or* e-mail. All demo students use the password **`Student@123`**.
 
-| Student ID | Name | Demo situation for CSC401 (today) |
+| Student ID | Name | Demo situation for SWE401 (today) |
 |---|---|---|
-| `CSC/2021/001` | Auwal Muhammad | Paid & eligible, not verified yet → **use for the success test** |
-| `CSC/2021/002` | Aisha Bello | Paid & eligible, not verified yet |
-| `CSC/2021/003` | Ibrahim Musa | **School fees NOT paid** → use for the *not eligible* test |
-| `CSC/2021/004` | Fatima Abdullahi | **Already verified** today → use for the *already verified* test |
-| `CSC/2021/005` | Chinedu Okafor | Eligible; has a **pending complaint** (marked absent for CSC405) |
+| `SWE/2021/001` | Auwal Muhammad | Paid & eligible, not verified yet → **use for the success test** |
+| `SWE/2021/002` | Aisha Bello | Paid & eligible, not verified yet |
+| `SWE/2021/003` | Ibrahim Musa | **School fees NOT paid** → use for the *not eligible* test |
+| `SWE/2021/004` | Fatima Abdullahi | **Already verified** today → use for the *already verified* test |
+| `SWE/2021/005` | Chinedu Okafor | Eligible; has a **pending complaint** (marked absent for SWE405) |
 
-Demo exams: **CSC401** Software Engineering (today, ongoing, kiosk exam), **CSC403** Computer Networks (in 3 days, scheduled), **CSC405** Artificial Intelligence (5 days ago, completed).
+Demo exams: **SWE401** Software Architecture and Design (today, ongoing, kiosk exam), **SWE403** Software Testing and Quality Assurance (in 3 days, scheduled), **SWE405** Software Project Management (5 days ago, completed).
 
 > No faces are seeded, because biometric data has to come from a real camera. Enroll yourself as a demo student before testing recognition.
 > **Change all demo passwords** before any real use.
@@ -412,18 +413,18 @@ Demo exams: **CSC401** Software Engineering (today, ongoing, kiosk exam), **CSC4
 A 10-minute walkthrough covering the whole system:
 
 1. **Import** `schema.sql` and `seed.sql`; start Apache and MySQL.
-2. **Admin login** → the dashboard shows live counts and "Kiosk examination: CSC401".
-3. **Enroll a face:** *Students* → `CSC/2021/001` → **Enroll face** → Start camera → **Capture & Enroll**. Expect "Face enrolled with N sample(s). Recognition model updated."
-4. **(Optional) enroll a second person** as `CSC/2021/003` (unpaid) to test the *not eligible* path, and someone as `CSC/2021/004` to test *already verified*.
+2. **Admin login** → the dashboard shows live counts and "Kiosk examination: SWE401".
+3. **Enroll a face:** *Students* → `SWE/2021/001` → **Enroll face** → Start camera → **Capture & Enroll**. Expect "Face enrolled with N sample(s). Recognition model updated."
+4. **(Optional) enroll a second person** as `SWE/2021/003` (unpaid) to test the *not eligible* path, and someone as `SWE/2021/004` to test *already verified*.
 5. **Verification Kiosk** → stand in front of the camera → **VERIFY STUDENT**. Expect ✓ *VERIFICATION SUCCESSFUL*.
 6. Click **VERIFY STUDENT** again. Expect ⚠ *ALREADY VERIFIED* (no duplicate record).
 7. Point the camera at someone who is not enrolled. Expect ✗ *STUDENT NOT RECOGNIZED*.
-8. Verify the person enrolled as `CSC/2021/003`. Expect ✗ *NOT ELIGIBLE: School fees/payment requirement has not been satisfied.*
-9. **Payments & Eligibility** → CSC401 → switch **School fees** on for `CSC/2021/003` → verify again. Expect ✓.
+8. Verify the person enrolled as `SWE/2021/003`. Expect ✗ *NOT ELIGIBLE: School fees/payment requirement has not been satisfied.*
+9. **Payments & Eligibility** → SWE401 → switch **School fees** on for `SWE/2021/003` → verify again. Expect ✓.
 10. **Manual verification** on the kiosk → search "Aisha" → *Verify manually*. Expect ✓ with method *Manual*.
-11. Log out, then log in as **`CSC/2021/001` / `Student@123`** → *My Attendance* shows CSC401 **Present**. *Timetable* shows CSC401/CSC403. Submit a **complaint**.
+11. Log out, then log in as **`SWE/2021/001` / `Student@123`** → *My Attendance* shows SWE401 **Present**. *Timetable* shows SWE401/SWE403. Submit a **complaint**.
 12. Log in as admin → **Complaints** → *Review* → respond and **Resolve**. The student sees the new status and response.
-13. **Attendance** → filter by CSC401 → **Correct** a record (a reason is required) → check **Audit Logs**.
+13. **Attendance** → filter by SWE401 → **Correct** a record (a reason is required) → check **Audit Logs**.
 
 ---
 
@@ -437,7 +438,7 @@ A 10-minute walkthrough covering the whole system:
 | "Required Python packages are missing" | `venv\Scripts\activate` then `pip install -r facial_recognition\requirements.txt`. Make sure PHP uses the **same** interpreter (Settings → Test Python / OpenCV shows `python_executable`). |
 | `lbph_available: false` / "cv2.face… unavailable" | `pip uninstall -y opencv-python opencv-contrib-python` then `pip install opencv-contrib-python`. |
 | Camera does not start / "Camera API unavailable" | Use `http://localhost/...` or HTTPS ([§13](#13-running-the-project)); allow camera permission (camera icon in the address bar); close other apps using the camera (Teams, Zoom). |
-| Enrollment: "Only N of 8 frames contained one clear face" | Improve front lighting, remove backlight (windows behind the student), move closer, make sure only one person is visible, hold still. |
+| Enrollment: "Only N of 8 frames contained one clear face" | Hold still during capture (movement = blur). If it says *too blurry* although the student was still, the camera is soft: lower `ENROLL_MIN_SHARPNESS` in `config/config.php` to just below the "Measured sharpness" shown in the message. Otherwise: Improve front lighting, remove backlight (windows behind the student), move closer, make sure only one person is visible, hold still. |
 | Always "STUDENT NOT RECOGNIZED" | Enroll in the **same location/lighting** as the kiosk; check that the model is trained (Settings); raise the threshold slightly (e.g. 75–80) after checking distances in the audit log. |
 | Wrong student recognised | **Lower** the threshold, re-enroll both students with better images, and always keep staff supervision. |
 | "Verification is only allowed while the examination is ongoing" | Settings → choose the exam with *Also set status to Ongoing*, or Examinations → More → *Mark as Ongoing*. |
@@ -526,16 +527,16 @@ exam-verification-system/
 
 | # | Scenario | How to test | Expected |
 |---|---|---|---|
-| 1 | Admin logs in | `admin@university.edu.ng` / `Admin@123` | Admin dashboard |
-| 2 | Student logs in | `CSC/2021/001` / `Student@123` | Student dashboard |
+| 1 | Admin logs in | `admin@buk.edu.ng` / `Admin@123` | Admin dashboard |
+| 2 | Student logs in | `SWE/2021/001` / `Student@123` | Student dashboard |
 | 3 | Admin creates student | Students → Add Student | Appears in student list |
-| 4 | Admin creates examination | Examinations → Create (dept *Computer Science*, level *400*) | Appears in the students' timetable |
+| 4 | Admin creates examination | Examinations → Create (dept *Software Engineering*, level *400*) | Appears in the students' timetable |
 | 5 | Admin marks student eligible | Payments & Eligibility → toggle *School fees* | Result shows ELIGIBLE; kiosk accepts the student |
 | 6 | Facial enrollment | Students → 📷 → Capture & Enroll | Face detected, samples saved, *Face ID registered* |
 | 7 | Correct student verifies | Kiosk → VERIFY | Recognised, eligibility checked, attendance recorded |
 | 8 | Verify twice | Kiosk → VERIFY again | ⚠ ALREADY VERIFIED; still one attendance row |
 | 9 | Unrecognised face | Non-enrolled person at kiosk | ✗ STUDENT NOT RECOGNIZED |
-| 10 | Not eligible | Enrolled `CSC/2021/003` (unpaid) at kiosk | ✗ NOT ELIGIBLE + reason |
+| 10 | Not eligible | Enrolled `SWE/2021/003` (unpaid) at kiosk | ✗ NOT ELIGIBLE + reason |
 | 11 | Student timetable | Student → Exam Timetable | Correct exams listed |
 | 12 | Student attendance | Student → My Attendance | Verified exam shows *Present* |
 | 13 | Student complaint | Student → Complaints → Submit | Visible in Admin → Complaints / dashboard |

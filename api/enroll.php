@@ -72,7 +72,8 @@ try {
         $tempPaths[] = store_temp_upload($file, $extensions[$i]);
     }
     $result = run_python('enroll.py', array_merge(
-        ['detect', '--output-dir', FACES_PATH, '--min-faces', (string) ENROLL_MIN_FACES],
+        ['detect', '--output-dir', FACES_PATH, '--min-faces', (string) ENROLL_MIN_FACES,
+            '--min-sharpness', (string) ENROLL_MIN_SHARPNESS],
         $tempPaths
     ));
 } finally {

@@ -10,7 +10,7 @@ LBPH returns a DISTANCE (0 = identical; larger = less similar).
 The face is accepted only when distance <= threshold.
 
 Success:
-    {"success": true, "matched": true, "student_id": "CSC/2021/001", "user_id": 2,
+    {"success": true, "matched": true, "student_id": "SWE/2021/001", "user_id": 2,
      "distance": 41.7, "confidence": 0.7021, "threshold": 70}
 Failure (examples):
     {"success": false, "matched": false, "reason": "NO_MATCH", "message": "No matching face found", ...}

@@ -77,13 +77,13 @@ require __DIR__ . '/../includes/header.php';
                     <div class="mb-3">
                         <label class="form-label required" for="subject">Subject</label>
                         <input class="form-control<?= isset($errors['subject']) ? ' is-invalid' : '' ?>" id="subject" name="subject" value="<?= e($form['subject']) ?>"
-                               required minlength="5" maxlength="150" placeholder="e.g. Attendance not showing for CSC401">
+                               required minlength="5" maxlength="150" placeholder="e.g. Attendance not showing for SWE401">
                         <div class="invalid-feedback"><?= e($errors['subject'] ?? 'Subject must be at least 5 characters.') ?></div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label required" for="description">Description</label>
                         <textarea class="form-control<?= isset($errors['description']) ? ' is-invalid' : '' ?>" id="description" name="description" rows="5"
-                                  required minlength="15" maxlength="2000" placeholder="I attended the CSC401 examination but my attendance is not showing. I sat in…"><?= e($form['description']) ?></textarea>
+                                  required minlength="15" maxlength="2000" placeholder="I attended the SWE401 examination but my attendance is not showing. I sat in…"><?= e($form['description']) ?></textarea>
                         <div class="invalid-feedback"><?= e($errors['description'] ?? 'Please describe the problem (at least 15 characters).') ?></div>
                     </div>
                     <button class="btn btn-primary w-100"><i class="bi bi-send me-1"></i>Submit complaint</button>

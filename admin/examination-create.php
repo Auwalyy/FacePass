@@ -37,7 +37,7 @@ if (is_post()) {
     ];
 
     if (!preg_match('/^[A-Z]{2,5}\d{3,4}[A-Z]?$/', $form['course_code'])) {
-        $errors['course_code'] = 'Course code must look like CSC401.';
+        $errors['course_code'] = 'Course code must look like SWE401.';
     }
     if (mb_strlen($form['course_title']) < 3) {
         $errors['course_title'] = 'Course title is required.';
@@ -140,7 +140,7 @@ require __DIR__ . '/../includes/header.php';
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label required" for="course_code">Course Code</label>
-                    <input class="form-control text-uppercase<?= $cls('course_code') ?>" id="course_code" name="course_code" value="<?= e($form['course_code']) ?>" required maxlength="20" placeholder="CSC401">
+                    <input class="form-control text-uppercase<?= $cls('course_code') ?>" id="course_code" name="course_code" value="<?= e($form['course_code']) ?>" required maxlength="20" placeholder="SWE401">
                     <?= $err('course_code') ?>
                 </div>
                 <div class="col-md-9">

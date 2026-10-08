@@ -7,8 +7,8 @@ Sub-commands
 
     python enroll.py detect --output-dir ../uploads/faces --min-faces 5 IMG1 IMG2 ...
 
-   For every frame: exactly one face must be detected, the frame must be sharp
-   and reasonably lit. Valid faces are cropped, normalised (200x200 grayscale,
+   For every frame: exactly one face must be detected, the face must be sharp
+   enough (--min-sharpness) and reasonably lit. Valid faces are cropped, normalised (200x200 grayscale,
    histogram-equalised) and saved with RANDOM file names. If fewer than
    --min-faces frames pass, nothing is kept and success=false is returned.
 
@@ -16,7 +16,7 @@ Sub-commands
 
     python enroll.py train --manifest manifest.json --model-dir models
 
-   manifest.json = {"samples": [{"label": 12, "student_id": "CSC/2021/001", "path": "..."}]}
+   manifest.json = {"samples": [{"label": 12, "student_id": "SWE/2021/001", "path": "..."}]}
    Each sample is also added horizontally flipped to make the model a little
    more tolerant of pose.
 
@@ -32,8 +32,8 @@ import sys
 
 from face_utils import (
     LABELS_FILE, MAX_BRIGHTNESS, MIN_BRIGHTNESS, MIN_SHARPNESS, MODEL_FILE,
-    brightness, create_recognizer, crop_face, cv2, detect_faces, emit, load_gray,
-    np, save_png, sharpness,
+    brightness, create_recognizer, crop_face, cv2, detect_faces, emit, face_sharpness,
+    load_gray, np, save_png,
 )
 
 
@@ -41,7 +41,7 @@ def cmd_detect(args):
     if not os.path.isdir(args.output_dir):
         os.makedirs(args.output_dir, exist_ok=True)
 
-    saved, rejected = [], []
+    saved, rejected, measured = [], [], []
     for index, path in enumerate(args.images):
         gray = load_gray(path)
         if gray is None:
@@ -57,9 +57,9 @@ def cmd_detect(args):
             continue
 
         x, y, w, h = boxes[0]
-        region = gray[y:y + h, x:x + w]
-        sharp, bright = sharpness(region), brightness(region)
-        if sharp < MIN_SHARPNESS:
+        sharp, bright = face_sharpness(gray, boxes[0]), brightness(gray[y:y + h, x:x + w])
+        measured.append(round(sharp, 1))
+        if sharp < args.min_sharpness:
             rejected.append({"frame": index, "reason": "too_blurry", "sharpness": round(sharp, 1)})
             continue
         if not (MIN_BRIGHTNESS <= bright <= MAX_BRIGHTNESS):
@@ -87,15 +87,21 @@ def cmd_detect(args):
         reasons = {}
         for r in rejected:
             reasons[r["reason"]] = reasons.get(r["reason"], 0) + 1
+        message = ("Only {} of {} frames contained one clear face (need {}). "
+                   "Face the camera alone, in good light, and hold still.").format(
+                       len(saved), len(args.images), args.min_faces)
+        if reasons.get("too_blurry"):
+            message += " Measured sharpness {}-{} (minimum {}); if the camera is simply soft, " \
+                       "lower ENROLL_MIN_SHARPNESS in config/config.php.".format(
+                           min(measured), max(measured), args.min_sharpness)
         emit({
             "success": False,
             "reason": "INSUFFICIENT_FACES",
-            "message": "Only {} of {} frames contained one clear face (need {}). "
-                       "Face the camera alone, in good light, and hold still.".format(
-                           len(saved), len(args.images), args.min_faces),
+            "message": message,
             "accepted": len(saved),
             "rejected": rejected,
             "rejection_summary": reasons,
+            "measured_sharpness": measured,
         })
 
     emit({
@@ -177,6 +183,8 @@ def main():
     p_detect = sub.add_parser("detect", help="validate frames and save cropped faces")
     p_detect.add_argument("--output-dir", required=True)
     p_detect.add_argument("--min-faces", type=int, default=5)
+    p_detect.add_argument("--min-sharpness", type=float, default=MIN_SHARPNESS,
+                          help="minimum Laplacian variance of the 200x200 face (default %(default)s)")
     p_detect.add_argument("images", nargs="+")
 
     p_train = sub.add_parser("train", help="train the LBPH model from a manifest")

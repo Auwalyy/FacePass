@@ -33,7 +33,11 @@ MODEL_FILE = "lbph_model.yml"   # trained LBPH model (inside the model directory
 LABELS_FILE = "labels.json"     # label (users.id) -> student_id mapping + metadata
 
 # Image quality gates used during enrollment.
-MIN_SHARPNESS = 35.0            # variance of Laplacian; lower = blurrier
+# Sharpness = variance of the Laplacian measured on the face resized to 200x200
+# (so it does not depend on how large the face is in the frame).
+# Typical values: sharp photo 150-350, soft laptop webcam 6-60,
+# motion-smeared / out-of-focus face 2-4. Overridable with --min-sharpness.
+MIN_SHARPNESS = 5.0
 MIN_BRIGHTNESS = 40.0           # mean grey level (0-255)
 MAX_BRIGHTNESS = 220.0
 
@@ -113,6 +117,13 @@ def crop_face(gray, box, margin=0.15):
 
 def sharpness(gray):
     return float(cv2.Laplacian(gray, cv2.CV_64F).var())
+
+
+def face_sharpness(gray, box):
+    """Sharpness of a detected face, measured at the standard 200x200 size."""
+    x, y, w, h = box
+    region = cv2.resize(gray[y:y + h, x:x + w], FACE_SIZE, interpolation=cv2.INTER_AREA)
+    return sharpness(region)
 
 
 def brightness(gray):

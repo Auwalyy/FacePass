@@ -30,7 +30,7 @@ defined('APP_INIT') or exit('No direct access.');
             <li>Only <strong>one person</strong> should be in front of the camera.</li>
             <li>Use good, even lighting on the face; avoid strong light behind the student.</li>
             <li>Remove caps or sunglasses. Keep the face inside the oval.</li>
-            <li>Press <strong>Capture &amp; Enroll</strong> and turn the head <em>slightly</em> left and right while <?= (int) ENROLL_FRAMES ?> frames are taken.</li>
+            <li>Press <strong>Capture &amp; Enroll</strong> and <strong>hold still</strong>, looking at the camera, while <?= (int) ENROLL_FRAMES ?> frames are taken (about 3 seconds). Movement causes blurry frames.</li>
         </ol>
         <p class="small text-muted">Each frame is checked by OpenCV: it must contain exactly one sharp, well-lit face.
             At least <?= (int) ENROLL_MIN_FACES ?> good frames are required, otherwise nothing is stored.</p>

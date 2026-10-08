@@ -8,7 +8,7 @@
 --
 -- NOTE ON NAMING:
 --   users.student_id is the human-readable matriculation number
---   (e.g. "CSC/2021/001").  In every other table, the column
+--   (e.g. "SWE/2021/001").  In every other table, the column
 --   `student_id` is a FOREIGN KEY to users.id (the numeric primary key).
 -- =====================================================================
 
