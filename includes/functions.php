@@ -137,11 +137,15 @@ function valid_time(string $value): bool
 
 function client_ip(): string
 {
-    // Behind a Cloudflare Tunnel every request arrives from 127.0.0.1, so use the
-    // visitor IP Cloudflare supplies. It is trusted ONLY via the local tunnel
-    // (see via_local_tunnel()); otherwise forwarded headers are trivially spoofable.
+    // Behind a tunnel (ngrok / cloudflared) every request arrives from 127.0.0.1,
+    // so use the visitor IP the tunnel supplies. It is trusted ONLY via the local
+    // tunnel (see via_local_tunnel()); otherwise forwarded headers are trivially spoofable.
     if (via_local_tunnel()) {
-        $ip = filter_var($_SERVER['HTTP_CF_CONNECTING_IP'], FILTER_VALIDATE_IP);
+        // Cloudflare's own header, else the LAST X-Forwarded-For entry: that is the
+        // one the tunnel appended (earlier entries can be forged by the visitor).
+        $forwarded = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
+        $candidate = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? trim((string) end($forwarded));
+        $ip = filter_var($candidate, FILTER_VALIDATE_IP);
         if ($ip !== false) {
             return $ip;
         }

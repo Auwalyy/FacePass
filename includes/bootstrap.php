@@ -72,17 +72,18 @@ if (!headers_sent()) {
 }
 
 // ---------------------------------------------------------------------
-// Online access through a Cloudflare Tunnel (cloudflared on this machine)
+// Online access through a tunnel running on this machine (ngrok / cloudflared)
 // ---------------------------------------------------------------------
 
 /**
  * True when the request was forwarded by a tunnel running on this computer:
- * it comes from the loopback address AND carries Cloudflare's visitor header.
+ * it comes from the loopback address AND carries a forwarding header
+ * (Cloudflare: CF-Connecting-IP, ngrok: X-Forwarded-For).
  */
 function via_local_tunnel(): bool
 {
     return in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true)
-        && !empty($_SERVER['HTTP_CF_CONNECTING_IP']);
+        && (!empty($_SERVER['HTTP_CF_CONNECTING_IP']) || !empty($_SERVER['HTTP_X_FORWARDED_FOR']));
 }
 
 /** HTTPS directly, or HTTPS terminated by the tunnel. */
