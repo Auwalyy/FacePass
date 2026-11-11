@@ -31,7 +31,7 @@ if ($user['role'] === 'student') {
     $stmt = $pdo->prepare(
         "SELECT $fields FROM examinations e
          LEFT JOIN exam_eligibility el ON el.exam_id = e.id AND el.student_id = ?
-         WHERE (e.department = ? AND e.level = ?) OR el.id IS NOT NULL
+         WHERE (e.audience = 'department' AND e.department = ? AND e.level = ?) OR el.id IS NOT NULL
          ORDER BY e.exam_date, e.start_time"
     );
     $stmt->execute([$user['id'], $user['department'], $user['level']]);

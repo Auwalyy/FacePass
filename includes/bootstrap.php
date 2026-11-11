@@ -115,5 +115,8 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/exams.php';
+
+ensure_exam_schema();
 
 enforce_session_timeout();

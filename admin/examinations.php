@@ -21,6 +21,10 @@ if (is_post()) {
             $pdo->prepare('UPDATE examinations SET status = ? WHERE id = ?')->execute([$status, $exam['id']]);
             audit_log('EXAM_UPDATE', "Changed status of {$exam['course_code']} from {$exam['status']} to $status");
             flash('success', "{$exam['course_code']} is now " . ucfirst($status) . '.');
+            if ($status === 'cancelled' && (int) get_setting('active_exam_id', '0') === (int) $exam['id']) {
+                set_setting('active_exam_id', null);
+                flash('warning', "{$exam['course_code']} was removed from the verification kiosk.");
+            }
             if ($status === 'ongoing' && (int) get_setting('active_exam_id', '0') !== (int) $exam['id']) {
                 flash('info', 'Tip: use "Use on kiosk" to make this the examination being verified at the hall entrance.');
             }
@@ -123,10 +127,12 @@ require __DIR__ . '/../includes/header.php';
                     <td><strong><?= e($ex['course_code']) ?></strong>
                         <?php if ($activeId === (int) $ex['id']): ?><span class="badge bg-primary ms-1" title="Selected on the verification kiosk"><i class="bi bi-broadcast"></i> Kiosk</span><?php endif; ?>
                         <br><span class="small text-muted"><?= e($ex['course_title']) ?></span></td>
-                    <td class="small"><?= e($ex['department']) ?><br><?= e($ex['level']) ?> Level</td>
-                    <td class="small text-nowrap"><?= e(fmt_date($ex['exam_date'])) ?><br><?= e(fmt_time($ex['start_time'])) ?> – <?= e(fmt_time($ex['end_time'])) ?></td>
+                    <td class="small"><?= e($ex['department']) ?><br><?= e($ex['level']) ?> Level
+                        <?php if ($ex['audience'] === 'selected'): ?><br><span class="badge bg-info-subtle text-info-emphasis border" title="Only students added individually sit this exam">Selected students</span><?php endif; ?></td>
+                    <td class="small text-nowrap"><?= e(fmt_date($ex['exam_date'])) ?><br><?= e(fmt_time($ex['start_time'])) ?> – <?= e(fmt_time($ex['end_time'])) ?>
+                        <?php if ($ex['status'] === 'scheduled' && $ex['exam_date'] < date('Y-m-d')): ?><br><span class="badge bg-warning text-dark" title="The date has passed but the status is still Scheduled">Date passed</span><?php endif; ?></td>
                     <td class="small"><?= e($ex['venue']) ?></td>
-                    <td><?= (int) $ex['eligible'] ?> / <?= (int) $ex['registered'] ?></td>
+                    <td><a class="text-decoration-none" href="<?= e(url('admin/payments.php?exam_id=' . $ex['id'])) ?>" title="View / add candidates"><?= (int) $ex['eligible'] ?> / <?= (int) $ex['registered'] ?></a></td>
                     <td><?= (int) $ex['present'] ?></td>
                     <td><?= status_badge($ex['status']) ?></td>
                     <td class="text-end text-nowrap">
@@ -138,7 +144,7 @@ require __DIR__ . '/../includes/header.php';
                                     <li><form method="post"><?= csrf_field() ?><input type="hidden" name="id" value="<?= (int) $ex['id'] ?>"><input type="hidden" name="view" value="<?= e($view) ?>">
                                         <button class="dropdown-item" name="action" value="set_active"><i class="bi bi-broadcast me-2"></i>Use on kiosk</button></form></li>
                                 <?php endif; ?>
-                                <li><a class="dropdown-item" href="<?= e(url('admin/payments.php?exam_id=' . $ex['id'])) ?>"><i class="bi bi-cash-coin me-2"></i>Eligibility list</a></li>
+                                <li><a class="dropdown-item" href="<?= e(url('admin/payments.php?exam_id=' . $ex['id'])) ?>"><i class="bi bi-people me-2"></i>Candidates &amp; eligibility</a></li>
                                 <li><a class="dropdown-item" href="<?= e(url('admin/attendance.php?exam_id=' . $ex['id'])) ?>"><i class="bi bi-check2-square me-2"></i>Attendance</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <?php foreach (EXAM_STATUSES as $st): if ($st === $ex['status']) continue; ?>

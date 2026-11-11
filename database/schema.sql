@@ -72,6 +72,7 @@ CREATE TABLE examinations (
     course_title  VARCHAR(150) NOT NULL,
     department    VARCHAR(100) NOT NULL,
     level         VARCHAR(10)  NOT NULL,
+    audience      ENUM('department','selected') NOT NULL DEFAULT 'department',  -- whole dept/level, or only students added individually
     exam_date     DATE         NOT NULL,
     start_time    TIME         NOT NULL,
     end_time      TIME         NOT NULL,

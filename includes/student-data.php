@@ -19,7 +19,7 @@ function student_exams(array $student): array
          FROM examinations e
          LEFT JOIN exam_eligibility el ON el.exam_id = e.id AND el.student_id = ?
          LEFT JOIN attendance a ON a.exam_id = e.id AND a.student_id = ?
-         WHERE (e.department = ? AND e.level = ?) OR el.id IS NOT NULL OR a.id IS NOT NULL
+         WHERE (e.audience = 'department' AND e.department = ? AND e.level = ?) OR el.id IS NOT NULL OR a.id IS NOT NULL
          ORDER BY e.exam_date, e.start_time"
     );
     $stmt->execute([$student['id'], $student['id'], $student['department'], $student['level']]);

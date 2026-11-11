@@ -29,15 +29,12 @@ if (is_post()) {
         $newId = (int) db()->lastInsertId();
         audit_log('STUDENT_CREATE', "Registered student {$data['student_id']} - " . full_name($data));
 
-        // Automatically create (not-yet-cleared) eligibility rows for upcoming exams in the student's dept/level.
-        $stmt = db()->prepare(
-            "INSERT IGNORE INTO exam_eligibility (student_id, exam_id, school_fees_paid, eligible, reason)
-             SELECT ?, id, 0, 0, ? FROM examinations
-             WHERE department = ? AND level = ? AND status IN ('scheduled','ongoing')"
-        );
-        $stmt->execute([$newId, 'Awaiting payment confirmation.', $data['department'], $data['level']]);
+        // Automatically register (not yet cleared) for upcoming whole-class exams of the student's dept/level.
+        $joined = register_student_for_department_exams($newId, $data['department'], $data['level']);
 
-        flash('success', 'Student ' . $data['student_id'] . ' registered. Next step: enroll the student\'s face.');
+        flash('success', 'Student ' . $data['student_id'] . ' registered'
+            . ($joined ? " and added to $joined upcoming examination(s)" : '')
+            . '. Next step: enroll the student\'s face. To add an examination for this student, use "Add this student to an examination" below.');
         redirect('admin/student-view.php?id=' . $newId);
     }
 }

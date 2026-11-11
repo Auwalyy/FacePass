@@ -18,9 +18,12 @@ $isEdit = $existing !== null;
 $form = $existing ?? [
     'course_code' => '', 'course_title' => '', 'department' => '', 'level' => '',
     'exam_date' => date('Y-m-d', strtotime('+1 day')), 'start_time' => '09:00', 'end_time' => '12:00',
-    'venue' => '', 'status' => 'scheduled',
+    'venue' => '', 'status' => 'scheduled', 'audience' => 'department',
 ];
+$form['audience'] = $form['audience'] ?? 'department';
+$candidatesRaw = '';
 $errors = [];
+$addStudents = [];   // users rows to register individually
 
 if (is_post()) {
     require_csrf();
@@ -34,7 +37,9 @@ if (is_post()) {
         'end_time' => post_str('end_time', 8),
         'venue' => post_str('venue', 120),
         'status' => post_str('status', 20),
+        'audience' => post_str('audience', 20),
     ];
+    $candidatesRaw = post_str('candidates', 5000);
 
     if (!preg_match('/^[A-Z]{2,5}\d{3,4}[A-Z]?$/', $form['course_code'])) {
         $errors['course_code'] = 'Course code must look like SWE401.';
@@ -65,6 +70,35 @@ if (is_post()) {
     if (!in_array($form['status'], EXAM_STATUSES, true)) {
         $errors['status'] = 'Select a status.';
     }
+    if (!in_array($form['audience'], EXAM_AUDIENCES, true)) {
+        $errors['audience'] = 'Choose who sits this examination.';
+    }
+    if (!$isEdit && valid_date($form['exam_date']) && $form['exam_date'] < date('Y-m-d') && $form['status'] === 'scheduled') {
+        $errors['exam_date'] = 'A scheduled examination cannot be in the past.';
+    }
+
+    // Individually added students (matric numbers).
+    $unknown = $inactive = [];
+    foreach (parse_matric_list($candidatesRaw) as $matric) {
+        $s = find_student_by_matric($matric);
+        if (!$s) {
+            $unknown[] = $matric;
+        } elseif ($s['account_status'] !== 'active') {
+            $inactive[] = $matric;
+        } else {
+            $addStudents[] = $s;
+        }
+    }
+    if ($unknown) {
+        $errors['candidates'] = 'Unknown student ID(s): ' . implode(', ', $unknown) . '.';
+    } elseif ($inactive) {
+        $errors['candidates'] = 'Inactive account(s): ' . implode(', ', $inactive) . '. Activate them first.';
+    } elseif ($form['audience'] === 'selected' && !$addStudents && !$isEdit) {
+        $errors['candidates'] = 'Enter the student ID of at least one student who will sit this examination.';
+    }
+    if ($addStudents && in_array($form['status'], ['completed', 'cancelled'], true)) {
+        $errors['candidates'] = 'Students cannot be added to a ' . $form['status'] . ' examination.';
+    }
 
     // Venue clash: same venue, same date, overlapping time (ignoring cancelled exams).
     if (!$errors) {
@@ -80,13 +114,13 @@ if (is_post()) {
     }
 
     if (!$errors) {
-        $values = [$form['course_code'], $form['course_title'], $form['department'], $form['level'], $form['exam_date'],
-            $form['start_time'], $form['end_time'], $form['venue'], $form['status']];
+        $values = [$form['course_code'], $form['course_title'], $form['department'], $form['level'], $form['audience'],
+            $form['exam_date'], $form['start_time'], $form['end_time'], $form['venue'], $form['status']];
 
         if ($isEdit) {
             $pdo->prepare(
-                'UPDATE examinations SET course_code = ?, course_title = ?, department = ?, level = ?, exam_date = ?,
-                    start_time = ?, end_time = ?, venue = ?, status = ? WHERE id = ?'
+                'UPDATE examinations SET course_code = ?, course_title = ?, department = ?, level = ?, audience = ?,
+                    exam_date = ?, start_time = ?, end_time = ?, venue = ?, status = ? WHERE id = ?'
             )->execute([...$values, $id]);
             $changes = [];
             foreach ($form as $k => $v) {
@@ -97,29 +131,38 @@ if (is_post()) {
                 }
             }
             audit_log('EXAM_UPDATE', "Updated examination {$form['course_code']}" . ($changes ? ': ' . implode('; ', $changes) : ' (no changes)'));
-            flash('success', "Examination {$form['course_code']} updated.");
+            $message = "Examination {$form['course_code']} updated.";
         } else {
             $pdo->prepare(
-                'INSERT INTO examinations (course_code, course_title, department, level, exam_date, start_time, end_time, venue, status)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                'INSERT INTO examinations (course_code, course_title, department, level, audience, exam_date, start_time, end_time, venue, status)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
             )->execute($values);
             $id = (int) $pdo->lastInsertId();
-            audit_log('EXAM_CREATE', "Created examination {$form['course_code']} - {$form['course_title']} on {$form['exam_date']} at {$form['venue']}");
-
-            $generated = 0;
-            if (!empty($_POST['generate_eligibility'])) {
-                // One eligibility row per active student in that department & level (not yet cleared).
-                $stmt = $pdo->prepare(
-                    "INSERT IGNORE INTO exam_eligibility (student_id, exam_id, school_fees_paid, eligible, reason)
-                     SELECT id, ?, 0, 0, 'Awaiting payment confirmation.' FROM users
-                     WHERE role = 'student' AND account_status = 'active' AND department = ? AND level = ?"
-                );
-                $stmt->execute([$id, $form['department'], $form['level']]);
-                $generated = $stmt->rowCount();
-            }
-            flash('success', "Examination {$form['course_code']} created" . ($generated ? " with $generated eligibility record(s). Mark paid students on Payments & Eligibility." : '.'));
+            audit_log('EXAM_CREATE', "Created examination {$form['course_code']} - {$form['course_title']} on {$form['exam_date']} at {$form['venue']}"
+                . ($form['audience'] === 'selected' ? ' (selected students only)' : ''));
+            $message = "Examination {$form['course_code']} created.";
         }
-        redirect('admin/examinations.php');
+
+        // Register candidates.
+        $exam = find_exam($id);
+        $registered = 0;
+        if ($form['audience'] === 'department' && !empty($_POST['generate_eligibility'])) {
+            $registered += register_department_candidates($exam);
+        }
+        $problems = [];
+        foreach ($addStudents as $s) {
+            $res = register_candidate($s, $exam);
+            if ($res['ok']) {
+                $registered++;
+            } else {
+                $problems[] = $res['message'];
+            }
+        }
+        flash('success', $message . ($registered ? " $registered student(s) registered - mark paid students below." : ''));
+        foreach ($problems as $p) {
+            flash('warning', $p);
+        }
+        redirect('admin/payments.php?exam_id=' . $id);
     }
 }
 
@@ -189,17 +232,35 @@ require __DIR__ . '/../includes/header.php';
                     <input class="form-control<?= $cls('venue') ?>" id="venue" name="venue" value="<?= e($form['venue']) ?>" required maxlength="120" placeholder="Main Examination Hall A">
                     <?= $err('venue') ?>
                 </div>
-                <?php if (!$isEdit): ?>
-                    <div class="col-12">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="generate_eligibility" name="generate_eligibility" value="1" checked>
-                            <label class="form-check-label" for="generate_eligibility">
-                                Create eligibility records for all active students in this department and level
-                                <span class="text-muted small">(marked <em>not paid</em> until you clear them)</span>
-                            </label>
-                        </div>
+                <div class="col-12">
+                    <label class="form-label required d-block">Who sits this examination?</label>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="audience" id="aud_department" value="department" <?= $form['audience'] === 'department' ? 'checked' : '' ?>>
+                        <label class="form-check-label" for="aud_department">All students of the department &amp; level above</label>
                     </div>
-                <?php endif; ?>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="audience" id="aud_selected" value="selected" <?= $form['audience'] === 'selected' ? 'checked' : '' ?>>
+                        <label class="form-check-label" for="aud_selected">Only selected students <span class="text-muted small">(e.g. one student, carry-over or resit)</span></label>
+                    </div>
+                    <?= $err('audience') ?>
+                </div>
+                <div class="col-12" id="generateBox">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="generate_eligibility" name="generate_eligibility" value="1" <?= $isEdit ? '' : 'checked' ?>>
+                        <label class="form-check-label" for="generate_eligibility">
+                            Register <?= $isEdit ? 'any not-yet-registered' : 'all' ?> active students of this department and level
+                            <span class="text-muted small">(marked <em>not paid</em> until you clear them)</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="candidates" id="candidatesLabel"><?= $isEdit ? 'Add more students' : 'Add individual students' ?></label>
+                    <textarea class="form-control<?= $cls('candidates') ?>" id="candidates" name="candidates" rows="3"
+                              placeholder="Student IDs separated by commas or new lines, e.g. SWE/2026/001, CSC/2025/014"><?= e($candidatesRaw) ?></textarea>
+                    <div class="form-text">Students from any department or level can be added. A student who already has another examination at the same time is skipped with a warning.
+                        <?php if ($isEdit): ?>To remove students, use the <a href="<?= e(url('admin/payments.php?exam_id=' . $id)) ?>">candidates list</a>.<?php endif; ?></div>
+                    <?= $err('candidates') ?>
+                </div>
             </div>
             <div class="d-flex justify-content-end gap-2 mt-4">
                 <a href="<?= e(url('admin/examinations.php')) ?>" class="btn btn-outline-secondary">Cancel</a>
@@ -208,4 +269,17 @@ require __DIR__ . '/../includes/header.php';
         </form>
     </div>
 </div>
+<script>
+(function () {
+    const box = document.getElementById('generateBox');
+    const label = document.getElementById('candidatesLabel');
+    const sync = () => {
+        const selected = document.getElementById('aud_selected').checked;
+        box.classList.toggle('d-none', selected);
+        label.classList.toggle('required', selected && <?= $isEdit ? 'false' : 'true' ?>);
+    };
+    document.querySelectorAll('input[name="audience"]').forEach((r) => r.addEventListener('change', sync));
+    sync();
+})();
+</script>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

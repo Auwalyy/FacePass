@@ -28,14 +28,38 @@ if (is_post() && $exam) {
     require_csrf();
     $action = post_str('action', 30);
     if ($action === 'generate') {
-        $stmt = $pdo->prepare(
-            "INSERT IGNORE INTO exam_eligibility (student_id, exam_id, school_fees_paid, eligible, reason)
-             SELECT id, ?, 0, 0, 'Awaiting payment confirmation.' FROM users
-             WHERE role = 'student' AND account_status = 'active' AND department = ? AND level = ?"
-        );
-        $stmt->execute([$exam['id'], $exam['department'], $exam['level']]);
-        audit_log('PAYMENT_UPDATE', "Generated {$stmt->rowCount()} eligibility record(s) for {$exam['course_code']}");
-        flash('success', $stmt->rowCount() . ' eligibility record(s) created.');
+        $count = register_department_candidates($exam);
+        audit_log('PAYMENT_UPDATE', "Generated $count eligibility record(s) for {$exam['course_code']}");
+        flash('success', $count . ' student(s) registered.');
+    } elseif ($action === 'add_students') {
+        $cleared = !empty($_POST['cleared']);
+        $added = 0;
+        $matrics = parse_matric_list(post_str('candidates', 5000));
+        if (!$matrics) {
+            flash('warning', 'Enter at least one student ID.');
+        }
+        foreach ($matrics as $matric) {
+            $student = find_student_by_matric($matric);
+            if (!$student) {
+                flash('danger', "No student with ID $matric.");
+                continue;
+            }
+            $res = register_candidate($student, $exam, $cleared);
+            if ($res['ok']) {
+                $added++;
+            } else {
+                flash('warning', $res['message']);
+            }
+        }
+        if ($added) {
+            flash('success', "$added student(s) added to {$exam['course_code']}.");
+        }
+    } elseif ($action === 'remove') {
+        $student = find_student(post_int('student_id'));
+        if ($student) {
+            $res = unregister_candidate($student, $exam);
+            flash($res['ok'] ? 'success' : 'danger', $res['message']);
+        }
     } elseif ($action === 'all_eligible') {
         $stmt = $pdo->prepare('UPDATE exam_eligibility SET school_fees_paid = 1, eligible = 1, reason = NULL WHERE exam_id = ?');
         $stmt->execute([$exam['id']]);
@@ -54,9 +78,14 @@ $rows = [];
 $totals = ['registered' => 0, 'paid' => 0, 'eligible' => 0, 'missing' => 0];
 
 if ($exam) {
-    // Students registered for the exam + students of the exam's dept/level without a record yet.
-    $where = "(el.id IS NOT NULL OR (u.department = ? AND u.level = ? AND u.account_status = 'active'))";
-    $params = [$exam['id'], $exam['department'], $exam['level']];
+    // Students registered for the exam + (for whole-class exams) students of the exam's dept/level without a record yet.
+    if ($exam['audience'] === 'department') {
+        $where = "(el.id IS NOT NULL OR (u.department = ? AND u.level = ? AND u.account_status = 'active'))";
+        $params = [$exam['id'], $exam['department'], $exam['level']];
+    } else {
+        $where = 'el.id IS NOT NULL';
+        $params = [$exam['id']];
+    }
     if ($q !== '') {
         $where .= " AND (u.student_id LIKE ? OR CONCAT(u.first_name, ' ', u.last_name) LIKE ?)";
         array_push($params, "%$q%", "%$q%");
@@ -86,6 +115,7 @@ if ($exam) {
     }
 }
 
+$isOpen = $exam && in_array($exam['status'], ['scheduled', 'ongoing'], true);
 $pageTitle = 'Payments & Eligibility';
 $breadcrumbs = ['Dashboard' => 'admin/dashboard.php', 'Payments & Eligibility' => null];
 $pageScripts = ['admin.js'];
@@ -138,9 +168,13 @@ require __DIR__ . '/../includes/header.php';
 
     <div class="card">
         <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
-            <span><?= e($exam['course_code'] . ' – ' . $exam['course_title']) ?> · <?= e($exam['department']) ?> <?= e($exam['level']) ?>L</span>
+            <span><?= e($exam['course_code'] . ' – ' . $exam['course_title']) ?> · <?= e(exam_audience_label($exam)) ?>
+                <a class="small ms-1" href="<?= e(url('admin/examination-create.php?id=' . $exam['id'])) ?>">Edit exam</a></span>
             <div class="d-flex gap-2">
-                <?php if ($totals['missing'] > 0): ?>
+                <?php if ($isOpen): ?>
+                    <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#addStudentsBox"><i class="bi bi-person-plus me-1"></i>Add students</button>
+                <?php endif; ?>
+                <?php if ($totals['missing'] > 0 && $isOpen): ?>
                     <form method="post"><?= csrf_field() ?><input type="hidden" name="exam_id" value="<?= (int) $exam['id'] ?>">
                         <button class="btn btn-sm btn-outline-primary" name="action" value="generate"><i class="bi bi-plus-circle me-1"></i>Create missing records</button></form>
                 <?php endif; ?>
@@ -149,10 +183,29 @@ require __DIR__ . '/../includes/header.php';
                     <button class="btn btn-sm btn-outline-success" name="action" value="all_eligible"><i class="bi bi-check-all me-1"></i>Mark all eligible</button></form>
             </div>
         </div>
+        <?php if ($isOpen): ?>
+            <div class="collapse border-bottom" id="addStudentsBox">
+                <form method="post" class="p-3 row g-2 align-items-end">
+                    <?= csrf_field() ?><input type="hidden" name="exam_id" value="<?= (int) $exam['id'] ?>"><input type="hidden" name="action" value="add_students">
+                    <div class="col-md-7">
+                        <label class="form-label small mb-1" for="candidates">Student ID(s) – any department or level</label>
+                        <textarea class="form-control form-control-sm" id="candidates" name="candidates" rows="2" required
+                                  placeholder="e.g. SWE/2026/001, CSC/2025/014"></textarea>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="cleared" name="cleared" value="1">
+                            <label class="form-check-label small" for="cleared">Already paid &amp; eligible</label>
+                        </div>
+                    </div>
+                    <div class="col-md-2"><button class="btn btn-sm btn-primary w-100"><i class="bi bi-plus-lg me-1"></i>Add</button></div>
+                </form>
+            </div>
+        <?php endif; ?>
         <div id="paymentAlert" class="px-3 pt-3"></div>
         <div class="table-responsive">
             <table class="table align-middle table-card" id="eligibilityTable" data-exam-id="<?= (int) $exam['id'] ?>">
-                <thead><tr><th>Student</th><th>Face ID</th><th>School Fees</th><th>Eligible</th><th>Reason (if not eligible)</th><th>Result</th><th>Last verified</th></tr></thead>
+                <thead><tr><th>Student</th><th>Face ID</th><th>School Fees</th><th>Eligible</th><th>Reason (if not eligible)</th><th>Result</th><th>Last verified</th><th></th></tr></thead>
                 <tbody>
                 <?php foreach ($rows as $r): $ok = $r['elig_id'] && $r['school_fees_paid'] && $r['eligible']; ?>
                     <tr data-student-id="<?= (int) $r['id'] ?>">
@@ -181,10 +234,19 @@ require __DIR__ . '/../includes/header.php';
                         </td>
                         <td class="js-result"><?= $r['elig_id'] ? ($ok ? '<span class="badge bg-success">ELIGIBLE</span>' : '<span class="badge bg-danger">NOT ELIGIBLE</span>') : '<span class="badge bg-light text-dark">No record</span>' ?></td>
                         <td class="small text-muted"><?= e(fmt_datetime($r['verified_at'])) ?></td>
+                        <td class="text-end">
+                            <?php if ($r['elig_id'] && !$r['verified_at']): ?>
+                                <form method="post" data-confirm="<?= e('Remove ' . $r['student_id'] . ' from ' . $exam['course_code'] . '?') ?>" data-confirm-label="Remove">
+                                    <?= csrf_field() ?><input type="hidden" name="exam_id" value="<?= (int) $exam['id'] ?>">
+                                    <input type="hidden" name="student_id" value="<?= (int) $r['id'] ?>">
+                                    <button class="btn btn-sm btn-outline-danger" name="action" value="remove" title="Remove from this examination"><i class="bi bi-person-dash"></i></button>
+                                </form>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
                 <?php if (!$rows): ?>
-                    <tr><td colspan="7"><div class="empty-state"><i class="bi bi-people"></i>No students found for this examination.</div></td></tr>
+                    <tr><td colspan="8"><div class="empty-state"><i class="bi bi-people"></i>No students registered for this examination yet<?= $isOpen ? ' – use <strong>Add students</strong> above' : '' ?>.</div></td></tr>
                 <?php endif; ?>
                 </tbody>
             </table>

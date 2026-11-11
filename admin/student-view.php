@@ -52,6 +52,16 @@ if (is_post()) {
             }
             audit_log('STUDENT_UPDATE', "Updated student {$form['student_id']}" . ($changed ? ': ' . implode('; ', $changed) : ' (no changes)'));
 
+            // Moved to another department/level (or re-activated): join that class's upcoming examinations.
+            $joined = 0;
+            if ($form['account_status'] === 'active' && ($student['department'] !== $form['department']
+                    || $student['level'] !== $form['level'] || $student['account_status'] !== 'active')) {
+                $joined = register_student_for_department_exams($id, $form['department'], $form['level']);
+            }
+            if ($joined) {
+                flash('info', "Registered for $joined upcoming examination(s) of {$form['department']} {$form['level']} Level.");
+            }
+
             // Model labels carry the student ID / active status, so retrain when those change.
             if ((int) $student['face_registered'] && ($student['student_id'] !== $form['student_id'] || $student['account_status'] !== $form['account_status'])) {
                 retrain_face_model();
@@ -59,6 +69,22 @@ if (is_post()) {
             flash('success', 'Student details updated.');
             redirect('admin/student-view.php?id=' . $id);
         }
+    } elseif ($action === 'add_exam') {
+        $exam = find_exam(post_int('exam_id'));
+        if (!$exam) {
+            flash('danger', 'Select an examination.');
+        } else {
+            $res = register_candidate($student, $exam, !empty($_POST['cleared']));
+            flash($res['ok'] ? 'success' : 'danger', $res['message']);
+        }
+        redirect('admin/student-view.php?id=' . $id);
+    } elseif ($action === 'remove_exam') {
+        $exam = find_exam(post_int('exam_id'));
+        if ($exam) {
+            $res = unregister_candidate($student, $exam);
+            flash($res['ok'] ? 'success' : 'danger', $res['message']);
+        }
+        redirect('admin/student-view.php?id=' . $id);
     } elseif ($action === 'reset_face') {
         delete_face_files($id);
         $pdo->prepare('DELETE FROM student_faces WHERE student_id = ?')->execute([$id]);
@@ -78,16 +104,27 @@ $faces->execute([$id]);
 $faces = $faces->fetchAll();
 
 $stmt = $pdo->prepare(
-    "SELECT e.*, el.school_fees_paid, el.eligible, el.reason, el.verified_at,
+    "SELECT e.*, el.id AS elig_id, el.school_fees_paid, el.eligible, el.reason, el.verified_at,
             a.status AS att_status, a.verification_method, a.verification_time, a.confidence_score
      FROM examinations e
      LEFT JOIN exam_eligibility el ON el.exam_id = e.id AND el.student_id = ?
      LEFT JOIN attendance a ON a.exam_id = e.id AND a.student_id = ?
-     WHERE (e.department = ? AND e.level = ?) OR el.id IS NOT NULL OR a.id IS NOT NULL
+     WHERE (e.audience = 'department' AND e.department = ? AND e.level = ?) OR el.id IS NOT NULL OR a.id IS NOT NULL
      ORDER BY e.exam_date DESC, e.start_time DESC"
 );
 $stmt->execute([$id, $id, $student['department'], $student['level']]);
 $exams = $stmt->fetchAll();
+
+// Open examinations the student can still be added to.
+$stmt = $pdo->prepare(
+    "SELECT e.id, e.course_code, e.course_title, e.exam_date, e.start_time, e.department, e.level, e.status
+     FROM examinations e
+     WHERE e.status IN ('scheduled','ongoing') AND e.exam_date >= CURDATE()
+       AND NOT EXISTS (SELECT 1 FROM exam_eligibility el WHERE el.exam_id = e.id AND el.student_id = ?)
+     ORDER BY e.exam_date, e.start_time"
+);
+$stmt->execute([$id]);
+$openExams = $stmt->fetchAll();
 
 $summary = ['present' => 0, 'absent' => 0, 'rejected' => 0, 'eligible' => 0];
 foreach ($exams as $ex) {
@@ -144,9 +181,36 @@ require __DIR__ . '/../includes/header.php';
 <div class="tab-content card border-top-0 rounded-top-0">
     <!-- Exams, eligibility & attendance -->
     <div class="tab-pane fade<?= $tab === 'overview' ? ' show active' : '' ?>" id="tab-overview" role="tabpanel">
+        <?php if ($student['account_status'] === 'active'): ?>
+            <form method="post" class="card-body border-bottom row g-2 align-items-end">
+                <?= csrf_field() ?>
+                <input type="hidden" name="id" value="<?= (int) $id ?>">
+                <input type="hidden" name="action" value="add_exam">
+                <div class="col-md-7">
+                    <label class="form-label small mb-1" for="add_exam_id">Add this student to an examination</label>
+                    <select class="form-select form-select-sm" id="add_exam_id" name="exam_id" required <?= $openExams ? '' : 'disabled' ?>>
+                        <?php if (!$openExams): ?><option value="">No upcoming examinations to add</option><?php endif; ?>
+                        <?php foreach ($openExams as $oe): ?>
+                            <option value="<?= (int) $oe['id'] ?>"><?= e("{$oe['course_code']} – {$oe['course_title']} · " . fmt_date($oe['exam_date']) . ' ' . fmt_time($oe['start_time'])
+                                . " · {$oe['department']} {$oe['level']}L" . ($oe['status'] === 'ongoing' ? ' (ongoing)' : '')) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="add_cleared" name="cleared" value="1">
+                        <label class="form-check-label small" for="add_cleared">Already paid &amp; eligible</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-sm btn-primary w-100" <?= $openExams ? '' : 'disabled' ?>><i class="bi bi-plus-lg me-1"></i>Add</button>
+                </div>
+                <div class="col-12 small text-muted">Need a brand-new exam just for this student? <a href="<?= e(url('admin/examination-create.php')) ?>">Create an examination</a> and choose <em>Only selected students</em>.</div>
+            </form>
+        <?php endif; ?>
         <div class="table-responsive">
             <table class="table align-middle table-card">
-                <thead><tr><th>Course</th><th>Date</th><th>Exam Status</th><th>Fees Paid</th><th>Eligible</th><th>Attendance</th><th>Method</th><th>Verified</th></tr></thead>
+                <thead><tr><th>Course</th><th>Date</th><th>Exam Status</th><th>Fees Paid</th><th>Eligible</th><th>Attendance</th><th>Method</th><th>Verified</th><th></th></tr></thead>
                 <tbody>
                 <?php foreach ($exams as $ex): ?>
                     <tr>
@@ -160,10 +224,20 @@ require __DIR__ . '/../includes/header.php';
                         <td><?= $ex['verification_method'] ? status_badge($ex['verification_method']) : '' ?></td>
                         <td class="small"><?= e(fmt_datetime($ex['verification_time'])) ?>
                             <?php if ($ex['confidence_score'] !== null): ?><div class="text-muted"><?= e(fmt_confidence($ex['confidence_score'])) ?></div><?php endif; ?></td>
+                        <td class="text-end">
+                            <?php if ($ex['elig_id'] && $ex['att_status'] !== 'present'): ?>
+                                <form method="post" data-confirm="<?= e('Remove ' . $student['student_id'] . ' from ' . $ex['course_code'] . '?') ?>" data-confirm-label="Remove">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="id" value="<?= (int) $id ?>">
+                                    <input type="hidden" name="exam_id" value="<?= (int) $ex['id'] ?>">
+                                    <button class="btn btn-sm btn-outline-danger" name="action" value="remove_exam" title="Remove from this examination"><i class="bi bi-person-dash"></i></button>
+                                </form>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
                 <?php if (!$exams): ?>
-                    <tr><td colspan="8"><div class="empty-state"><i class="bi bi-calendar-x"></i>No examinations for this student's department/level yet.</div></td></tr>
+                    <tr><td colspan="9"><div class="empty-state"><i class="bi bi-calendar-x"></i>This student is not registered for any examination yet.</div></td></tr>
                 <?php endif; ?>
                 </tbody>
             </table>
